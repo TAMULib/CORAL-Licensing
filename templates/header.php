@@ -16,6 +16,13 @@
 **************************************************************************************************************************
 */
 
+
+// tamu specific
+// use cas for authentication
+include_once 'cas.php';
+getCAS();
+//
+
 include_once 'user.php';
 
 $util = new Utility();
