@@ -2,9 +2,11 @@
 
 /*
 **************************************************************************************************************************
-** CORAL Licensing Module Add-on
+** CORAL Licensing Module v. 1.0
 **
 ** Copyright (c) 2010 University of Notre Dame
+**
+** This file is part of CORAL.
 **
 ** CORAL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 **
@@ -13,6 +15,10 @@
 ** You should have received a copy of the GNU General Public License along with CORAL.  If not, see <http://www.gnu.org/licenses/>.
 **
 **************************************************************************************************************************
+
+** This page was originally intended as a standalone add-on.  After interest this was added to the Licensing module
+** but it was not retrofitted to more tightly integrate into the Licensing module.
+
 */
 
 include_once 'directory.php';
@@ -49,30 +55,37 @@ $linkID = mysql_connect($host, $username, $password) or die("Could not connect t
 mysql_select_db($license_databaseName, $linkID) or die("Could not find License database.");
 mysql_select_db($resource_databaseName, $linkID) or die("Could not find Resource database.");
 
-if ($config->addon->cal_daybefore) {
-	$daybefore = $config->addon->cal_daybefore;
-} else {
-	$daybefore = "30";
-}
+$display = array();
+$calendarSettings = new CalendarSettings();
+$calendarSettingsArray = $calendarSettings->allAsArray();
 
-if ($config->addon->up_dayafter) {
-	$dayafter = $config->addon->up_dayafter;
-} else {
-	$dayafter = "1460";
-}
+// Set defaults just incase
 
-if ($config->addon->resourceType) {
-	$resourceType = $config->addon->resourceType;
-} else {
-	$resourceType = NULL;
-}
+$daybefore = "30";
+$dayafter = "1460";
+$resourceType = NULL;		// Resource Type ID
+$authorizedSiteID = array();  // Site ID's 1,2,3 etc
 
-if ($config->addon->authorizedSiteID) {
-	$authorizedSiteID = preg_split("/[\s,]+/", $config->addon->authorizedSiteID);
-} else {
-	$authorizedSiteID = array();
-}
-
+	foreach($calendarSettingsArray as $display) {
+		if (strtolower($display['shortName']) == strtolower('Days Before')) {
+			if (strlen($display['value'])>0) {
+				$daybefore = $display['value'];
+			}
+		} elseif (strtolower($display['shortName']) == strtolower('Days After')) {
+			if (strlen($display['value'])>0) {
+				$dayafter = $display['value'];
+			}
+		} elseif (strtolower($display['shortName']) == strtolower('Resource Type')) {
+			if (strlen($display['value'])>0) {
+				$resourceType = $display['value'];
+			}
+		} elseif (strtolower($display['shortName']) == strtolower('Authorized Site')) {
+			if (strlen($display['value'])>0) {
+				$authorizedSiteID = preg_split("/[\s,]+/", $display['value']);
+			}
+		}
+	}
+	
 echo "<!-- Start minus current day $daybefore End plus current day $dayafter-->";
 
 $query = "
@@ -98,7 +111,7 @@ if ($resourceType) {
 
 $query = $query . "ORDER BY `sortdate`, `$resource_databaseName`.`Resource`.`titleText`";
 
-$result = mysql_query($query, $linkID) or die("Query Failure");
+$result = mysql_query($query, $linkID) or die("Bad Query Failure");
 
 ?>
 
@@ -121,18 +134,18 @@ $result = mysql_query($query, $linkID) or die("Query Failure");
 				
 				while ($row = mysql_fetch_assoc($result)) {
 					$query2 = "SELECT 
-					  `Resource`.`resourceID`,
-					  `AuthorizedSite`.`shortName`,
-					  `AuthorizedSite`.`authorizedSiteID`
+					  `$resource_databaseName`.`Resource`.`resourceID`,
+					  `$resource_databaseName`.`AuthorizedSite`.`shortName`,
+					  `$resource_databaseName`.`AuthorizedSite`.`authorizedSiteID`
 					FROM
-					  `Resource`
-					  INNER JOIN `ResourceAuthorizedSiteLink` ON (`Resource`.`resourceID` = `ResourceAuthorizedSiteLink`.`resourceID`)
-					  INNER JOIN `AuthorizedSite` ON (`ResourceAuthorizedSiteLink`.`authorizedSiteID` = `AuthorizedSite`.`authorizedSiteID`)
+					  `coral_resources_prod`.`Resource`
+					  INNER JOIN `$resource_databaseName`.`ResourceAuthorizedSiteLink` ON (`$resource_databaseName`.`Resource`.`resourceID` = `$resource_databaseName`.`ResourceAuthorizedSiteLink`.`resourceID`)
+					  INNER JOIN `$resource_databaseName`.`AuthorizedSite` ON (`$resource_databaseName`.`ResourceAuthorizedSiteLink`.`authorizedSiteID` = `$resource_databaseName`.`AuthorizedSite`.`authorizedSiteID`)
 					WHERE
-					  `Resource`.`resourceID` = " . $row["resourceID"] .
-					  " order by `AuthorizedSite`.`shortName`";
+					  `$resource_databaseName`.`Resource`.`resourceID` = " . $row["resourceID"] .
+					  " order by `$resource_databaseName`.`AuthorizedSite`.`shortName`";
 
-					$result2 = mysql_query($query2, $linkID) or die("Query Failure");
+					$result2 = mysql_query($query2, $linkID) or die("Bad Query Failure");
 					  
 					$i = $i + 1;
 					

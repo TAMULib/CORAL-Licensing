@@ -117,7 +117,15 @@ if ($user->isAdmin()){
 <br />
 <br />
 
-
+<table class="headerTable">
+<tr><td>
+<span class="headerText">Calendar Settings</span>&nbsp;&nbsp;<span id='span_CalendarSettings_response'></span>
+<br /><br />
+<div id='div_CalendarSettings'>
+<img src = "images/circle.gif">Loading...
+</div>
+</td></tr>
+</table>
 
 <?php
 
