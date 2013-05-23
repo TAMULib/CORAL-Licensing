@@ -1,4 +1,5 @@
 <?php
+
 /*
 **************************************************************************************************************************
 ** CORAL Licensing Module v. 1.0
@@ -16,25 +17,29 @@
 **************************************************************************************************************************
 */
 
-
-class CalendarSettings extends DatabaseObject {
+class ResourceType extends DatabaseObject {
 
 	protected function defineRelationships() {}
 
 	protected function overridePrimaryKeyName() {}
 
-	//returns recordset of AuthorizedSites
-	public function getAllCalendarSettings(){
-	
+	//returns recordset of resourTypes
+	public function getAllResourceType(){
+
 		$config = new Configuration;
 
-		$query = "SELECT * FROM `CalendarSettings` order by `shortName`";
+		//if the Resource module is installed get the Resource database
+		if ($config->settings->resourcesModule == 'Y') {
+			$dbName = $config->settings->resourcesDatabaseName;
+	
+			$query = "SELECT * FROM " . $dbName . ".`ResourceType` order by `shortName`";
 
-		$result = $this->db->processQuery($query, 'assoc');
-		
+			$result = $this->db->processQuery($query, 'assoc');
+		}
 		return $result;
 	}	
-	
+
+
 }
 
 ?>

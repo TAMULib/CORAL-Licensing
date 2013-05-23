@@ -30,11 +30,11 @@ include 'templates/header.php';
 //except we don't want it to retain if they press the 'index' button
 //check what referring script is
 
-if (isset($_SESSION['ref_script']) && ($_SESSION['ref_script'] != "license.php")){
-	$reset='Y';
-}else{
-	$reset='N';
-}
+	if (isset($_SESSION['ref_script']) && ($_SESSION['ref_script'] != "license.php")){
+		$reset='Y';
+	}else{
+		$reset='N';
+	}
 
 $_SESSION['ref_script']=$currentPage;
 
@@ -57,37 +57,45 @@ mysql_select_db($resource_databaseName, $linkID) or die("Could not find Resource
 
 $display = array();
 $calendarSettings = new CalendarSettings();
-$calendarSettingsArray = $calendarSettings->allAsArray();
 
-// Set defaults just incase
-
-$daybefore = "30";
-$dayafter = "1460";
-$resourceType = NULL;		// Resource Type ID
-$authorizedSiteID = array();  // Site ID's 1,2,3 etc
+try{
+	$calendarSettingsArray = $calendarSettings->allAsArray();
+}catch(Exception $e){
+	echo "<span style='color:red'>There was an error with the CalendarSettings Table please verify the table has been created.</span>";
+	exit;
+}
 
 	foreach($calendarSettingsArray as $display) {
-		if (strtolower($display['shortName']) == strtolower('Days Before')) {
+		$config_error = TRUE;
+		if (strtolower($display['shortName']) == strtolower('Days Before Subscription End')) {
 			if (strlen($display['value'])>0) {
 				$daybefore = $display['value'];
+				$config_error = FALSE;
 			}
-		} elseif (strtolower($display['shortName']) == strtolower('Days After')) {
+		} elseif (strtolower($display['shortName']) == strtolower('Days After Subscription End')) {
 			if (strlen($display['value'])>0) {
 				$dayafter = $display['value'];
-			}
-		} elseif (strtolower($display['shortName']) == strtolower('Resource Type')) {
+				$config_error = FALSE;
+			} 
+		} elseif (strtolower($display['shortName']) == strtolower('Resource Type(s)')) {
 			if (strlen($display['value'])>0) {
 				$resourceType = $display['value'];
-			}
-		} elseif (strtolower($display['shortName']) == strtolower('Authorized Site')) {
+				$config_error = FALSE;
+			} 
+		} elseif (strtolower($display['shortName']) == strtolower('Authorized Site(s)')) {
 			if (strlen($display['value'])>0) {
 				$authorizedSiteID = preg_split("/[\s,]+/", $display['value']);
+				$config_error = FALSE;
 			}
 		}
 	}
 	
-echo "<!-- Start minus current day $daybefore End plus current day $dayafter-->";
-
+	// Validate the config settings
+	if ($config_error) { 
+		echo "<span style='color:red'>There was an error with the CalendarSettings Configuration.</span>";
+		exit;
+	}
+	
 $query = "
 SELECT DATE_FORMAT(`$resource_databaseName`.`Resource`.`subscriptionEndDate`, '%Y') AS `year`, 
 DATE_FORMAT(`$resource_databaseName`.`Resource`.`subscriptionEndDate`, '%M') AS `month`, 
@@ -105,12 +113,11 @@ WHERE
 `$resource_databaseName`.`Resource`.`subscriptionEndDate` <> '00/00/0000' AND 
 `$resource_databaseName`.`Resource`.`subscriptionEndDate` BETWEEN (CURDATE() - INTERVAL " . $daybefore . " DAY) AND (CURDATE() + INTERVAL " . $dayafter . " DAY) ";
 
-if ($resourceType) {
-	$query = $query . " AND `$resource_databaseName`.`Resource`.`resourceTypeID` IN ( ". $resourceType . " ) ";
-}
+	if ($resourceType) {
+		$query = $query . " AND `$resource_databaseName`.`Resource`.`resourceTypeID` IN ( ". $resourceType . " ) ";
+	}
 
 $query = $query . "ORDER BY `sortdate`, `$resource_databaseName`.`Resource`.`titleText`";
-
 $result = mysql_query($query, $linkID) or die("Bad Query Failure");
 
 ?>
@@ -130,8 +137,14 @@ $result = mysql_query($query, $linkID) or die("Bad Query Failure");
 			<?php
 				$mYear = "";
 				$mMonth = "";
-				$i = -1;
+				$month_html = "";
+				$year_html = "";
 				
+				$displayYear = FALSE;
+				$displayMonth = FALSE;
+				
+				$i = -1;
+
 				while ($row = mysql_fetch_assoc($result)) {
 					$query2 = "SELECT 
 					  `$resource_databaseName`.`Resource`.`resourceID`,
@@ -146,38 +159,63 @@ $result = mysql_query($query, $linkID) or die("Bad Query Failure");
 					  " order by `$resource_databaseName`.`AuthorizedSite`.`shortName`";
 
 					$result2 = mysql_query($query2, $linkID) or die("Bad Query Failure");
-					  
+					 
 					$i = $i + 1;
+					$html = "";
 					
-					if ($mYear != $row["year"]) {
-						$mYear = $row["year"];
-						echo "<tr>";
-						echo "<th colspan='2'><table class='noBorderTable'><tbody><tr><td>" . $mYear . "</td></tr></tbody></table></th>";
-						echo "</tr>";
-					}	
+						if ($mYear != $row["year"])  {
+							$mYear = $row["year"];
+							
+							$year_html = "";						
+							$year_html = $year_html . "<tr>";
+							$year_html = $year_html . "<th colspan='2'>
+													<table class='noBorderTable'>
+														<tbody>
+															<tr>
+																<td>" . $mYear . "</td>
+															</tr>
+														</tbody>
+													</table>
+												</th>";
+							$year_html = $year_html . "</tr>";
+							$displayYear = TRUE;
+						}	
 					
-					if ($mMonth != $row["month"]) {
-						$mMonth = $row["month"];
-						echo "<th colspan='2'><table class='noBorderTable'><tbody><tr><td>&nbsp;&nbsp;&nbsp;" . $mMonth . "</td></tr></tbody></table></th>";
-					}
+						if ($mMonth != $row["month"]) {
+							$mMonth = $row["month"];
+							
+							$month_html = "";
+							$month_html = $month_html . "<tr>";
+							$month_html = $month_html . "<th colspan='2'>
+													<table class='noBorderTable'>
+														<tbody>
+															<tr>
+																<td>&nbsp;&nbsp;&nbsp;" . $mMonth . "</td>
+															</tr>
+														</tbody>
+													</table>
+												</th>";
+							$month_html = $month_html . "</tr>";											
+							$displayMonth = TRUE;
+						}
 					
-					$html = "<tr>";
+					$html = $html . "<tr>";
 				
-					if ($i % 2 == 0) {
-						$alt = "alt";
-					} else {
-						$alt = "";
-					}
+						if ($i % 2 == 0) {
+							$alt = "alt";
+						} else {
+							$alt = "";
+						}
 					
 					$html = $html . "<td  colspan='2' class='$alt'>";
 					
 					$html = $html . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='../resources/resource.php?resourceID=" . $row["resourceID"] . "'><b>". $row["titleText"] . "</b></a>";
 					$html = $html . "&nbsp;&nbsp;[License: ";
 					$html = $html . "<a href='license.php?licenseID=" . $row["licenseID"] . "'>". $row["shortName"] . "</a>";
-					$html = $html . " ] - " . $row["resourceTypeName"] . "<!-- ( TypeID=" . $row["resourceTypeID"] . ") -->" ;
+					$html = $html . " ] - " . $row["resourceTypeName"];
 					
-						$k = 0;
-						$siteID = array();
+					$k = 0;
+					$siteID = array();
 						
 						while ($row2 = mysql_fetch_assoc($result2)) {
 							if ($k == 0) {
@@ -189,23 +227,30 @@ $result = mysql_query($query, $linkID) or die("Bad Query Failure");
 								$html = $html . ", ";
 							}
 							
-							$html = $html . $row2["shortName"] . "<!-- ( SiteID=" . $row2["authorizedSiteID"] . ") -->";
+							$html = $html . $row2["shortName"];
 							array_push( $siteID, $row2["authorizedSiteID"] );
 							$k = $k + 1;
 						}
 					
-					$html = $html . "</td>";
-
-					$html = $html . "</tr>";
-					
 					$arr3 = array_intersect($authorizedSiteID, $siteID);
-					
-					if (count($authorizedSiteID) == 0) {
-						echo $html;
-					} elseif (count($arr3) > 0) {
+
+					$html = $html . "</td>";
+					$html = $html . "</tr>";
+						
+					if (count($arr3) > 0) {
+						if ($displayYear) {
+							echo $year_html;
+							$displayYear = FALSE;
+						}
+						if ($displayMonth) {
+							echo $month_html;
+							$displayMonth = FALSE;
+						}						
 						echo $html;
 					}
+						
 				}
+				
 			?>	
 			</tbody>
 		</table>

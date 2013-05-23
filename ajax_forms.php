@@ -1021,10 +1021,8 @@ switch ($_GET['action']) {
 		if (isset($_GET['calendarSettingsID'])) $calendarSettingsID = $_GET['calendarSettingsID']; else $calendarSettingsID = '';
 
 		if ($calendarSettingsID){
-			$update='Update';
+			$update='Edit';
 			$calendarSettings = new CalendarSettings(new NamedArguments(array('primaryKey' => $calendarSettingsID)));
-		}else{
-			$update='Add New';
 		}
 
 
@@ -1033,11 +1031,84 @@ switch ($_GET['action']) {
 		<input type='hidden' name='calendarSettingsID' id='calendarSettingsID' value='<?php echo $calendarSettingsID; ?>' />
 		<table class="thickboxTable" style="width:260px;padding:2px;">
 		<tr><td colspan='2'><span class='headerText'><?php echo $update; ?> Calendar Settings</span><br /><br /></td></tr>
-		<tr><td><label for='shortName'><b>Variable Name</b></label</td><td><?php if (isset($calendarSettings)) echo $calendarSettings->shortName; ?></td></tr>
-		<tr><td><label for='value'><b>Value</b></label</td>
-		<td><input type='text' id='value' name='value' value='<?php if (isset($calendarSettings)) echo $calendarSettings->value; ?>' style='width:130px;'/></td>
-		</tr>
 
+		<?php 
+		
+		if (strtolower($calendarSettings->shortName) == strtolower('Resource Type(s)')) { ?>
+			<tr><td><label for='shortName'><b>Variable Name</b></label</td><td><?php if (isset($calendarSettings)) echo $calendarSettings->shortName; ?></td></tr>
+			<tr>
+			
+			<td><label for='value'><b>Value</b></label</td>
+			<td>
+			
+			
+			<select multiple name='value' id='value' style='width:155px'>
+			<?php
+
+			$display = array();
+			$resourceType = new ResourceType();
+			
+				foreach($resourceType->getAllResourceType() as $display) {
+					if (in_array($display['resourceTypeID'], explode(",", $calendarSettings->value))) {
+						echo "<option value='" . $display['resourceTypeID'] . "' selected>" . $display['shortName'] . "</option>";
+					}else{
+						echo "<option value='" . $display['resourceTypeID'] . "'>" . $display['shortName'] . "</option>";
+					}	
+				}
+
+			?>
+			</select>
+			</td>			
+			
+			</tr>
+
+		<?php 
+		
+		} elseif (strtolower($calendarSettings->shortName) == strtolower('Authorized Site(s)')) { ?>
+			<tr><td><label for='shortName'><b>Variable Name</b></label</td><td><?php if (isset($calendarSettings)) echo $calendarSettings->shortName; ?></td></tr>
+			<tr>
+			
+			<td><label for='value'><b>Value</b></label</td>
+			<td>
+			<select multiple name='value' id='value' style='width:155px'>
+			<?php
+
+			$display = array();
+			$authorizedSite = new AuthorizedSite();
+			
+				foreach($authorizedSite->getAllAuthorizedSite() as $display) {
+					if (in_array($display['authorizedSiteID'], explode(",", $calendarSettings->value))) {
+						echo "<option value='" . $display['authorizedSiteID'] . "' selected>" . $display['shortName'] . "</option>";
+					}else{
+						echo "<option value='" . $display['authorizedSiteID'] . "'>" . $display['shortName'] . "</option>";
+					}	
+				}
+			
+			?>
+			</select>
+			</td>			
+			
+			</tr>
+
+		<?php 
+		
+		} else { 
+		
+		?>
+			<tr><td><label for='shortName'><b>Variable Name</b></label</td><td><?php if (isset($calendarSettings)) echo $calendarSettings->shortName; ?></td></tr>
+			<tr><td><label for='value'><b>Value</b></label</td>
+			<td><input type='text' id='value' name='value' value='<?php if (isset($calendarSettings)) echo $calendarSettings->value; ?>' style='width:130px;'/></td>
+			</tr>
+		
+		<?php 
+		
+		} 
+		
+		?>
+		
+
+		
+		
 		<tr>
 		<td style="padding-top:18px;"><input type='button' value='<?php echo $update; ?>' onclick='javascript:window.parent.submitCalendarSettings();'></td>
 		<td style="padding-top:18px;padding-right:8px;text-align:right;"><input type='button' value='cancel' onclick="window.parent.tb_remove(); return false"></td>

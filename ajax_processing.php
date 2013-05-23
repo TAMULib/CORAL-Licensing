@@ -804,15 +804,20 @@ switch ($_GET['action']) {
  		break;
 
      case 'submitCalendarSettings':
+		
 		if ((isset($_POST['calendarSettingsID'])) && ($_POST['calendarSettingsID'] != '')){
  			$calendarSettings = new CalendarSettings(new NamedArguments(array('primaryKey' => $_POST['calendarSettingsID'])));
 		}else{
  			$calendarSettings = new CalendarSettings();
  			$calendarSettings->calendarSettingsID = '';
 		}
-
-		$calendarSettings->value	= $_POST['value'];
-
+		
+		if (is_array($_POST['value'])) {
+			$calendarSettings->value = implode(',',$_POST['value']);
+		} else {
+			$calendarSettings->value	= $_POST['value'];
+		}
+		
 		try {
 			$calendarSettings->save();
 		} catch (Exception $e) {

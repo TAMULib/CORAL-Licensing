@@ -190,20 +190,20 @@
  }
 
  function submitCalendarSettings(){
+ 
 	$.ajax({
           type:       "POST",
           url:        "ajax_processing.php?action=submitCalendarSettings",
           cache:      false,
           data:       { calendarSettingsID: $('#calendarSettingsID').val(), shortName: $('#shortName').val(), value: $('#value').val() },
+
           success:    function(html) { 
-          updateCalendarSettingsList();
-          window.parent.tb_remove();
-          }
+			updateCalendarSettingsList();
+			window.parent.tb_remove();
+		  }
        });
 
  }
-
-
 
  function submitQualifier(){
  	$("#submitQualifier").attr("disabled","disabled");
