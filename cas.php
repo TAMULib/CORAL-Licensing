@@ -11,11 +11,11 @@
 ##        Returns variables $sUin and $sNetid
 ##
 
-function getCAS($cas_base) {
+function getCAS($cas_host) {
   ##
   ## CAS URL
   ##
-  $cas_base = "https://cas.tamu.edu/cas";
+  $cas_base = "https://". $cas_host . "/cas";
   ##
   ## Service Variables
   ##
@@ -150,11 +150,11 @@ function characterData($parser, $data) {
 //     echo "I found a key";
 //     echo " $data";
     $sNetid = $data;
-	  $_SESSION['Netid'] = $sNetid; // store the net id data
+	$_SESSION['Netid'] = $sNetid; // store the net id data
     $_SESSION['loginID'] = $sNetid; // store the net id data
 
-//    echo "The session: " . $_SESSION['Netid'];
-//    echo "_SESSION[loginID]" . $_SESSION['loginID'];
+//    echo "The session: " . $_SESSION['Netid'] . "<br>";
+//    echo "_SESSION[loginID]" . $_SESSION['loginID'] . "<br>";
   }
   elseif ($curTag == $uinKey) {  
     $sUin = $data;
