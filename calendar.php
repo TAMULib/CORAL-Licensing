@@ -213,8 +213,6 @@ $result = mysql_query($query, $linkID) or die("Bad Query Failure");
 
 					$num_days = ((($interval->y) * 365) + (($interval->m) * 30) + ($interval->d));
 					
-					//echo $interval->days;
-											
 					$html = $html . "<td  colspan='2' class='$alt'>";
 					
 					$html = $html . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='../resources/resource.php?resourceID=" . $row["resourceID"] . "'><b>". $row["titleText"] . "</b></a>";
