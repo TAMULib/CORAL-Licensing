@@ -11,7 +11,12 @@ The following file contains notes on specific upgrades.  For full instructions o
 This upgrade contains coding and database structure changes.  
 
 This upgrade enables a calendar on on the menu that displays Licenses that are fixing to expire.
-For the calendar to work it requires the Resource module active and the database setting configured in the configuration.ini /admin/configuration.ini
+For the calendar to work it requires the Resource module active and the database setting configured 
+in the configuration.ini /admin/configuration.ini
+
+resourcesModule=Y
+resourcesDatabaseName=
+
 Default settings for the calendar can be changed in the admin menu.
 
 Database changes include:
