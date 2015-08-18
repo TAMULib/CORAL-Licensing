@@ -16,11 +16,18 @@
 **************************************************************************************************************************
 */
 
-
-include_once 'user.php';
-
 $util = new Utility();
 $config = new Configuration();
+
+// TAMU specific
+// use cas for authentication
+if($config->tamu->enableCAS == 'Y') {
+    session_start();
+	include_once 'cas.php';
+	getCAS($config->tamu->host_cas);
+}
+
+include_once 'user.php';
 
 //get the current page to determine which menu button should be depressed
 $currentPage = $_SERVER["SCRIPT_NAME"];
