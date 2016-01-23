@@ -19,13 +19,14 @@
 $util = new Utility();
 $config = new Configuration();
 
-// TAMU specific
+// tamu specific
 // use cas for authentication
 if($config->tamu->enableCAS == 'Y') {
     session_start();
 	include_once 'cas.php';
-	getCAS($config->tamu->host_cas);
+	getCAS($config->tamu->host_cas, $config->tamu->ip_cas);
 }
+//
 
 include_once 'user.php';
 
@@ -146,7 +147,7 @@ if ((file_exists($util->getCORALPath() . "index.php")) || ($config->settings->or
 
 	<div style='text-align:left;'>
 		<ul class="tabs">
-		<li class="changeMod"><?php echo _("Change Module");?>&nbsp;▼
+		<li class="changeMod"><?php echo _("Change Module");?>&nbsp;
 			<ul class="coraldropdown">
 				<?php if (file_exists($util->getCORALPath() . "index.php")) {?>
 				<li><a href="<?php echo $coralURL; ?>" target='_blank'><img src='images/change/coral-main.gif'></a></li>
@@ -167,10 +168,15 @@ if ((file_exists($util->getCORALPath() . "index.php")) || ($config->settings->or
 				<li><a href="<?php echo $coralURL; ?>cancellation/" target='_blank'><img src='images/change/coral-cancellation.gif'></a></li>
 				<?php
 				}
-				if ($config->settings->usageModule == 'Y') {
-				?>
-				<li><a href="<?php echo $coralURL; ?>usage/" target='_blank'><img src='images/change/coral-usage.gif'></a></li>
-				<?php } ?>
+        if ($config->settings->usageModule == 'Y') {
+        ?>
+        <li><a href="<?php echo $coralURL; ?>usage/" target='_blank'><img src='images/change/coral-usage.gif'></a></li>
+        <?php 
+        } 
+        if ($config->settings->managementModule == 'Y') {
+        ?>
+        <li><a href="<?php echo $coralURL; ?>management/" target='_blank'><img src='images/change/coral-management.gif'></a></li>
+        <?php } ?>  
 			</ul>
 		</li>
 		</ul>

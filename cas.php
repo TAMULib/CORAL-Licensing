@@ -1,4 +1,5 @@
 <?php
+  
 ##
 ## Note:  This function uses the "header" command, which 
 ##        MUST be called before anything else is written
@@ -11,105 +12,93 @@
 ##        Returns variables $sUin and $sNetid
 ##
 
-function getCAS($cas_host) {
+function getCAS($cas_base, $casIP) {
+  
   ##
-  ## CAS URL
+  ## Set CAS server variables
   ##
-  $cas_base = "https://". $cas_host . "/cas";
+  
+//  $cas_base = $sugar_config['CAS_Server'];
+  $cas_login = "cas/login";
+  $cas_check = "cas/serviceValidate";    // cas 2.0 method (xml return)
+  $cas_logout = "cas/logout";
+
+  $SERVER_NAME = $_SERVER['SERVER_NAME'];
+  $REQUEST_URI = $_SERVER['REQUEST_URI'];
+  $PHP_SELF = $_SERVER['PHP_SELF'];
+  $QUERY_STRING = $_SERVER['QUERY_STRING'];
+  
+	  if (isset($_SERVER['HTTPS'])) {
+		$http = "https";
+	  } else {
+		$http = "http";
+	  }
+
   ##
-  ## Service Variables
+  ## Validate through CAS
   ##
 
-  $server = $_SERVER['SERVER_NAME'];
-  $path = $_SERVER['PHP_SELF'];
-  $http = isset($_SERVER['HTTPS']) ? "https" : "http";
-  $serviceArgs = split("&", $_SERVER['QUERY_STRING']);
-
   ##
-  ## Get the CAS Ticket, if it has been set
+  ## Get the CAS ticket
   ##
-  
-  $ticket = isset($_GET['ticket']) ? $_GET['ticket'] : "";
-  
-  ##
-  ## If the Ticket is set, pop the last argument(ticket) from the query string
-  ##
-  
-  if ($ticket) {
-    array_pop($serviceArgs);
+  if (isset($_GET['ticket'])) {
+    $ticket = $_GET['ticket'];
+  }  else {
+	  $ticket="";
   }
 
   ##
-  ## Build the service URL; If there are still arguments in the query string,
-  ## combine them and add to the end of the url. Encode the URL
+  ## Separate ticket from other GET variables
   ##
-  
-  if (count($serviceArgs) > 0) {
-    $serviceUrl = "$http://$server$path?" . join("&", $serviceArgs);
-  } else {
-    $serviceUrl = "$http://$server$path";
-  }
-  $encodedServiceUrl = urlencode($serviceUrl);
+    
+	if ( preg_match("/&ticket=/", $QUERY_STRING) || ($QUERY_STRING && !$ticket) ) {
+		list ($getVars, $ticket) = split("&ticket=", $QUERY_STRING);
+		
+		$getVars = "?" . $getVars;
+		$myService = $PHP_SELF . $getVars;
+	} else {
+		$myService = $PHP_SELF;
+	}
 
-  ##
-  ## If the ticket has been set, call serviceValidate or proxyValidate, depending on the
-  ## ticket's 2-character prefix; else redirect to the CAS login page
-  ##
-
+	$myService = urlencode($myService);
+	
   if ($ticket) {
-    if (substr($ticket, 0, 2) == 'ST') {
-      $file = file("$cas_base/serviceValidate?service=$encodedServiceUrl&ticket=$ticket");
-    } elseif (substr($ticket, 0, 2) == 'PT') {
-      $file = file("$cas_base/proxyValidate?service=$encodedServiceUrl&ticket=$ticket");
-    }
-    if (!$file) {  // this still needs work to include the error function and closing string
-      die("The authentication process failed to validate through CAS.");
-    }
+    $file = @file("https://$cas_base/$cas_check?service=$http://$SERVER_NAME$myService&ticket=$ticket");
+	//echo "<br>https://$cas_base/$cas_check?service=$http://$SERVER_NAME$myService&ticket=$ticket<br>";	
+
+	if (!$file) {
+		  $file = file("https://$casIP/$cas_check?service=$http://$SERVER_NAME$myService&ticket=$ticket");
+		//	echo "<br>2<br>";		  
+		}
+		
+		if (!$file) {  // this still needs work to include the error function and closing string
+		  die("The authentication process failed to validate through CAS.");
+		}
   } 
   else {
-    $action="$cas_base/login?service=$encodedServiceUrl";
+    $action="https://$cas_base/$cas_login?service=$http://$SERVER_NAME$myService";
     header("Location: $action");
-    exit;
   }
 
   ##
-  ## Debug CAS Response
+  ## Now parse the xml return
   ##
-  
-  global $debug;
-  $debug = false;
-  if ($debug) {
-    var_dump($file);
-    echo "<pre>\n";
-    echo "Debug the CAS response:\n";
-    print_r($file);
-   echo "</pre>\n";
-  }
 
-  ##
-  ## Initialize NetID and UIN
-  ##
-  
+  // general vars
   $sNetid = "";
   $sUin = "";
-  
-  ##
-  ## Parse the CAS Response
-  ##
-
-  ##
-  ## Initialize XML Parser, set callbacks
-  ##
-  
+  $sFail = "";
+  $casNetid = "";
+  $casUIN = "";
+  $arItems = array();
+  $itemCount = 0;  
+ 
+  // parse xml, send to functions
   $xml_parser = xml_parser_create();
   xml_set_element_handler($xml_parser, "startElement", "endElement");
   xml_set_character_data_handler($xml_parser, "characterData");
 
-
-  ##
-  ## Loop through CAS response stream
-  ##
-  
+  // loop through CAS response stream
   if ($file) {
     foreach ($file as $data) {
       if (!xml_parse($xml_parser, $data)) {
@@ -119,10 +108,6 @@ function getCAS($cas_host) {
   } 
   xml_parser_free($xml_parser);
 }
-
-##
-## XML Handler Functions
-##
 
 function startElement($parser, $name, $attrs) {
   global $curTag;
@@ -135,29 +120,21 @@ function endElement($parser, $name) {
   $curTag = substr($curTag,0,$caret_pos);
 }
     
-
-##
-## Set $sNetid and $sUin
-##
-
+// get the xml information
 function characterData($parser, $data) {
-//echo "i am here";
   global $curTag;
-  global $sNetid, $sUin;
-  $netidKey = "^CAS:SERVICERESPONSE^CAS:AUTHENTICATIONSUCCESS^CAS:ATTRIBUTES^CAS:TAMUEDUPERSONNETID";
+  global $sNetid, $sUin, $sFail, $casNetid, $casUIN;
+  
+  $netidKey = "^CAS:SERVICERESPONSE^CAS:AUTHENTICATIONSUCCESS^CAS:USER";
   $uinKey = "^CAS:SERVICERESPONSE^CAS:AUTHENTICATIONSUCCESS^CAS:ATTRIBUTES^CAS:TAMUEDUPERSONUIN";
-  if ($curTag == $netidKey) {
-//     echo "I found a key";
-//     echo " $data";
-    $sNetid = $data;
-	$_SESSION['Netid'] = $sNetid; // store the net id data
-    $_SESSION['loginID'] = $sNetid; // store the net id data
 
-//    echo "The session: " . $_SESSION['Netid'] . "<br>";
-//    echo "_SESSION[loginID]" . $_SESSION['loginID'] . "<br>";
-  }
-  elseif ($curTag == $uinKey) {  
+  if ($curTag == $netidKey) {
+    $sNetid = $data;
+	$_SESSION['sNetid'] = $sNetid;
+  $_SESSION['loginID'] = $sNetid; // store the net id data
+  } elseif ($curTag == $uinKey) {  
     $sUin = $data;
+
   }
 }
 

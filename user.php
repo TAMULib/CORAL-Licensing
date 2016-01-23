@@ -15,6 +15,7 @@
 **
 **************************************************************************************************************************
 */
+session_start();
 
 $util = new Utility();
 $config = new Configuration();
@@ -63,7 +64,7 @@ $sessionID = $util->getSessionCookie();
 }else{
 
 	//get login id from server
-	if (!isset($_SESSION['loginID']) || ($_SESSION['loginID'] == '') || (strlen($_SESSION['loginID'] == 0))){
+	if (!isset($_SESSION['loginID']) || ($_SESSION['loginID'] == '')){
 
 
 		$varName = $config->settings->remoteAuthVariableName;
