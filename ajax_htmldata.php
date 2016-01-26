@@ -1269,21 +1269,23 @@ switch ($_GET['action']) {
 				<th>&nbsp;</th>
 				<?php
 
-				foreach($user->allAsArray() as $instance) {
-					$privilege = new Privilege(new NamedArguments(array('primaryKey' => $instance['privilegeID'])));
+				if (1 ==2) {  // Disable for Demo Site
+					foreach($user->allAsArray() as $instance) {
+						$privilege = new Privilege(new NamedArguments(array('primaryKey' => $instance['privilegeID'])));
 
-					echo "<tr>";
-					echo "<td>" . $instance['loginID'] . "</td>";
-					echo "<td>" . $instance['firstName'] . "</td>";
-					echo "<td>" . $instance['lastName'] . "</td>";
-					echo "<td>" . $privilege->shortName . "</td>";
-					//if not configured to use SFX, hide the Terms Tool Update Email
-					if ($util->useTermsTool()){
-						echo "<td>" . $instance['emailAddressForTermsTool'] . "</td>";
+						echo "<tr>";
+						echo "<td>" . $instance['loginID'] . "</td>";
+						echo "<td>" . $instance['firstName'] . "</td>";
+						echo "<td>" . $instance['lastName'] . "</td>";
+						echo "<td>" . $privilege->shortName . "</td>";
+						//if not configured to use SFX, hide the Terms Tool Update Email
+						if ($util->useTermsTool()){
+							echo "<td>" . $instance['emailAddressForTermsTool'] . "</td>";
+						}
+						echo "<td style='width:70px'><a href='ajax_forms.php?action=getAdminUserUpdateForm&loginID=" . $instance['loginID'] . "&height=210&width=295&modal=true' class='thickbox' id='expression'>"._("update")."</a></td>";
+						echo "<td style='width:50px'><a href='javascript:deleteUser(\"" . $instance['loginID'] . "\")'>"._("remove")."</a></td>";
+						echo "</tr>";
 					}
-					echo "<td style='width:70px'><a href='ajax_forms.php?action=getAdminUserUpdateForm&loginID=" . $instance['loginID'] . "&height=210&width=295&modal=true' class='thickbox' id='expression'>"._("update")."</a></td>";
-					echo "<td style='width:50px'><a href='javascript:deleteUser(\"" . $instance['loginID'] . "\")'>"._("remove")."</a></td>";
-					echo "</tr>";
 				}
 
 				?>

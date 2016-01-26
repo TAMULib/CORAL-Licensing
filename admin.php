@@ -33,7 +33,7 @@ if ($user->isAdmin()){
 <table class="headerTable">
 <tr><td>
 <span class="headerText"><?php echo _("Users");?></span>&nbsp;&nbsp;<span id='span_User_response' class='redText'></span>
-<br /><span id='span_newUser' class='adminAddInput'><a href='ajax_forms.php?action=getAdminUserUpdateForm&height=202&width=288&modal=true' class='thickbox' id='expression'><?php echo _("add new user");?></a></span>
+<?php  //Remove for Demo <br /><span id='span_newUser' class='adminAddInput'><a href='ajax_forms.php?action=getAdminUserUpdateForm&height=202&width=288&modal=true' class='thickbox' id='expression'><?php echo _("add new user"); </a></span> ?>
 <br /><br />
 <div id='div_User'>
 <img src = "images/circle.gif"><?php echo _("Loading...");?>
